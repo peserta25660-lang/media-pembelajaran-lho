@@ -1,0 +1,6 @@
+{
+  "name": "Pemandu Scaffolding Menulis Teks LHO",
+  "description": "Media pembelajaran interaktif scaffolding menulis Teks Laporan Hasil Observasi (LHO) berbasis Deep Learning untuk kelas X SMA/SMK.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

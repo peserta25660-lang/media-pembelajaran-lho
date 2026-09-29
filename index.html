@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
+  <title>Pemandu Scaffolding Menulis Teks LHO - Berbasis Deep Learning</title>
+  <meta name="description" content="Media pembelajaran interaktif scaffolding menulis Teks Laporan Hasil Observasi (LHO) berbasis Deep Learning untuk kelas X SMA/SMK." />
+  <meta property="og:title" content="Pemandu Scaffolding Menulis Teks LHO - Berbasis Deep Learning" />
+  <meta property="og:description" content="Media scaffolding digital menulis Teks Laporan Hasil Observasi (LHO) untuk PTK SMA/SMK." />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              500: '#16a34a',
+              600: '#15803d',
+              700: '#166534',
+              800: '#14532d',
+              900: '#052e16',
+            },
+            accent: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            serif: ['"Merriweather"', 'Georgia', 'serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- html2pdf.js CDN (Wajib) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 105px; /* Jarak aman di bawah sticky navbar */
+      scroll-padding-bottom: 300px;
+    }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+      color: #1e293b;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* Ruang aman ekstra saat keyboard HP terbuka */
+    .keyboard-spacing-bottom {
+      padding-bottom: 50vh;
+    }
+    /* Wadah pertanyaan dengan scroll-margin-top agar label pertanyaan tidak tertutup navbar */
+    .question-block {
+      scroll-margin-top: 105px;
+    }
+    .pdf-preview {
+      font-family: 'Merriweather', Georgia, serif;
+    }
+    .paragraph-indent {
+      text-indent: 2.25rem;
+    }
+    /* Highlight aktif saat kotak input sedang fokus */
+    .question-block.active-focus {
+      background-color: #f0fdf4 !important;
+      border-color: #22c55e !important;
+      box-shadow: 0 4px 12px -2px rgba(34, 197, 94, 0.2);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    /* Collapsible animation */
+    details summary::-webkit-details-marker {
+      display: none;
+    }
+  </style>
+</head>
+<body class="selection:bg-brand-100 selection:text-brand-900">
+
+  <!-- Sticky Slim Progress Bar (Sangat tipis & langsung fokus ke langkah penulisan) -->
+  <div class="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-white/10 text-white shadow-xs py-1.5 px-2 sm:px-3">
+    <div class="max-w-5xl mx-auto flex items-center justify-between gap-1.5 text-[11px] sm:text-xs">
+      <!-- 5 Langkah Buttons (Termasuk Profil Pengembang) -->
+      <div class="grid grid-cols-5 gap-1 w-full" id="stepper-container">
+        <button onclick="goToStep(1)" id="step-tab-1" class="step-tab py-1 px-1 rounded transition text-center font-bold bg-emerald-600 text-white truncate text-[10px] sm:text-xs">
+          1. Observasi
+        </button>
+        <button onclick="goToStep(2)" id="step-tab-2" class="step-tab py-1 px-1 rounded transition text-center text-slate-300 hover:text-white truncate text-[10px] sm:text-xs">
+          2. Kalimat
+        </button>
+        <button onclick="goToStep(3)" id="step-tab-3" class="step-tab py-1 px-1 rounded transition text-center text-slate-300 hover:text-white truncate text-[10px] sm:text-xs">
+          3. Paragraf
+        </button>
+        <button onclick="goToStep(4)" id="step-tab-4" class="step-tab py-1 px-1 rounded transition text-center text-slate-300 hover:text-white truncate text-[10px] sm:text-xs">
+          4. Hasil & PDF
+        </button>
+        <button onclick="goToStep(5)" id="step-tab-5" class="step-tab py-1 px-1 rounded transition text-center text-slate-300 hover:text-white truncate text-[10px] sm:text-xs">
+          5. Pengembang
+        </button>
+      </div>
+    </div>
+    
+    <!-- Active Question Helper Bar (Menjamin pertanyaan SELALU terbaca di HP saat keyboard aktif) -->
+    <div id="active-question-strip" class="hidden bg-emerald-950/95 text-emerald-100 border-t border-emerald-500/30 px-3 py-1.5 text-xs shadow-md transition-all duration-200">
+      <div class="max-w-5xl mx-auto flex items-start gap-2">
+        <span class="inline-block px-1.5 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px] shrink-0 uppercase tracking-wider" id="strip-badge">Soal Aktif</span>
+        <p class="text-[11px] sm:text-xs font-semibold leading-tight line-clamp-2 text-white" id="strip-text">
+          Pilih pertanyaan untuk mulai mengetik...
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container: Ringkas, Compact Mobile Spacing -->
+  <main class="max-w-5xl mx-auto px-2.5 sm:px-4 py-3 sm:py-5 w-full flex-1 keyboard-spacing-bottom">
+    
+    <!-- LocalStorage Auto-save notice banner (Mini) -->
+    <div id="save-status" class="mb-2 sm:mb-3 text-[11px] sm:text-xs flex items-center justify-between text-slate-500 bg-white border border-slate-200 px-2.5 py-1.5 rounded-lg shadow-xs">
+      <span class="flex items-center gap-1.5 truncate">
+        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="truncate">Tersimpan otomatis di browser ini</span>
+      </span>
+      <span id="save-timestamp" class="text-slate-400 font-mono text-[10px] shrink-0 ml-1">Tersimpan</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- STEP 1: PENGUMPULAN DATA OBSERVASI (MEANINGFUL LEARNING) -->
+    <!-- ============================================================ -->
+    <section id="step-1-content" class="step-panel space-y-3 sm:space-y-5">
+      <!-- Identitas Siswa -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-xs">
+        <div class="flex items-center gap-1.5 mb-2.5 pb-1.5 border-b border-slate-100">
+          <span class="text-base">👤</span>
+          <h2 class="text-xs sm:text-sm font-bold text-slate-800">Identitas Siswa / Pengamat</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 text-xs sm:text-sm">
+          <!-- 1. Nama Lengkap -->
+          <div class="question-block scroll-mt-20">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-0.5">Nama Lengkap Siswa <span class="text-rose-500">*</span></label>
+            <input type="text" id="identitas-nama" placeholder="Contoh: Ahmad Fauzan Pratama" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+          </div>
+
+          <!-- 2. Kelas -->
+          <div class="question-block scroll-mt-20">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-0.5">Kelas <span class="text-rose-500">*</span></label>
+            <input type="text" id="identitas-kelas" placeholder="Contoh: X (Sepuluh)" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+          </div>
+
+          <!-- 3. Jurusan -->
+          <div class="question-block scroll-mt-20">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-0.5">Jurusan <span class="text-rose-500">*</span></label>
+            <input type="text" id="identitas-jurusan" placeholder="Contoh: MIPA 1 / RPL / TKJ" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+          </div>
+
+          <!-- 4. Nomor Presensi -->
+          <div class="question-block scroll-mt-20">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-0.5">Nomor Presensi (Absen) <span class="text-rose-500">*</span></label>
+            <input type="text" id="identitas-presensi" placeholder="Contoh: 04" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+          </div>
+
+          <!-- 5. Nama Sekolah / Instansi -->
+          <div class="question-block scroll-mt-20">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-0.5">Nama Sekolah / Instansi</label>
+            <input type="text" id="identitas-sekolah" placeholder="Contoh: SMA Negeri 1 Prestasi" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+          </div>
+
+          <!-- 6. Waktu Observasi -->
+          <div class="question-block scroll-mt-20">
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-0.5">Waktu Observasi</label>
+            <input type="text" id="identitas-tanggal" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Panduan Scaffolding Observasi (Collapsible Accordion agar tidak memenuhi layar HP) -->
+      <details class="group bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-2.5 sm:p-3 text-xs text-emerald-950 transition">
+        <summary class="cursor-pointer font-bold text-emerald-900 flex items-center justify-between select-none">
+          <span class="flex items-center gap-1.5">
+            <span>🌱</span>
+            <span class="text-[11px] sm:text-xs">Petunjuk Pengamatan (Meaningful Learning)</span>
+          </span>
+          <span class="text-[10px] bg-emerald-200/70 text-emerald-800 px-1.5 py-0.5 rounded font-normal group-open:hidden">ℹ️ Buka Petunjuk</span>
+          <span class="text-[10px] bg-emerald-200/70 text-emerald-800 px-1.5 py-0.5 rounded font-normal hidden group-open:inline">Tutup</span>
+        </summary>
+        <p class="text-[11px] sm:text-xs text-emerald-800/90 mt-2 leading-relaxed pt-2 border-t border-emerald-200/60">
+          Amati objek atau fasilitas nyata di sekolah (misal: kantin, kolam ikan, tempat sampah terpadu, kendaraan). Jawab 12 pertanyaan pemandu di bawah ini berdasarkan fakta yang kamu lihat langsung!
+        </p>
+      </details>
+
+      <!-- Bagian 1: Pernyataan Umum / Klasifikasi (Q1 - Q5) -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-xs space-y-2.5 sm:space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">I</span>
+            <div>
+              <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Bagian 1: Pernyataan Umum / Klasifikasi</h3>
+              <p class="text-[10px] sm:text-xs text-slate-500">Mengenalkan objek, definisi, dan kategori.</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded">5 Soal</span>
+        </div>
+
+        <!-- Q1 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q1. Apa nama objek / fasilitas yang kamu amati?
+          </label>
+          <input type="text" id="q1" placeholder="Contoh: Kolam Ikan Nila Sekolah" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q2 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q2. Masuk dalam kategori / jenis apakah objek tersebut?
+          </label>
+          <input type="text" id="q2" placeholder="Contoh: fasilitas sarana umum sekolah, ekosistem buatan" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q3 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q3. Di mana lokasi keberadaan objek tersebut di sekolah?
+          </label>
+          <input type="text" id="q3" placeholder="Contoh: di halaman tengah, sebelah timur perpustakaan" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q4 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q4. Kapan waktu pengamatan dilakukan?
+          </label>
+          <input type="text" id="q4" placeholder="Contoh: Selasa pukul 09.30 WIB saat istirahat pertama" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q5 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q5. Apa definisi atau gambaran umum singkat tentang objek tersebut?
+          </label>
+          <textarea id="q5" rows="2" placeholder="Contoh: Fasilitas ini merupakan sarana pendukung pembelajaran lingkungan yang dimanfaatkan untuk edukasi." class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition"></textarea>
+        </div>
+      </div>
+
+      <!-- Bagian 2: Deskripsi Bagian (Q6 - Q9) -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-xs space-y-2.5 sm:space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded bg-blue-100 text-blue-800 font-bold text-[10px] flex items-center justify-center">II</span>
+            <div>
+              <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Bagian 2: Deskripsi Bagian</h3>
+              <p class="text-[10px] sm:text-xs text-slate-500">Ciri fisik, komponen, kondisi, dan aktivitas/cara kerja.</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded">4 Soal</span>
+        </div>
+
+        <!-- Q6 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q6. Bagaimana bentuk, ukuran, warna, atau ciri fisik utama?
+          </label>
+          <input type="text" id="q6" placeholder="Contoh: persegi panjang ukuran 4 x 3 meter dengan air kedalaman 80 cm" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q7 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q7. Komponen, bagian, atau isi apa saja yang ada?
+          </label>
+          <input type="text" id="q7" placeholder="Contoh: pipa sirkulasi, bebatuan tepian, teratai, dan puluhan ikan nila" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q8 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q8. Bagaimana kondisi kebersihan atau kelayakan objek?
+          </label>
+          <input type="text" id="q8" placeholder="Contoh: air cukup jernih, sirkulasi lancar, dan bebas sampah plastik" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q9 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q9. Bagaimana cara kerja atau aktivitas di sekitarnya?
+          </label>
+          <textarea id="q9" rows="2" placeholder="Contoh: pompa mengalirkan oksigen terus menerus, siswa tampak mengamati gerak ikan." class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition"></textarea>
+        </div>
+      </div>
+
+      <!-- Bagian 3: Deskripsi Manfaat & Penutup (Q10 - Q12) -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-xs space-y-2.5 sm:space-y-3">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div class="flex items-center gap-1.5">
+            <span class="w-5 h-5 rounded bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center justify-center">III</span>
+            <div>
+              <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Bagian 3: Deskripsi Manfaat & Penutup</h3>
+              <p class="text-[10px] sm:text-xs text-slate-500">Fungsi nyata, perawatan, kesimpulan, dan saran.</p>
+            </div>
+          </div>
+          <span class="text-[10px] font-semibold px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded">3 Soal</span>
+        </div>
+
+        <!-- Q10 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q10. Apa manfaat utama objek bagi warga sekolah?
+          </label>
+          <input type="text" id="q10" placeholder="Contoh: laboratorium alam biologi dan sarana relaksasi siswa" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q11 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q11. Bagaimana perawatan atau aturan penggunaannya?
+          </label>
+          <input type="text" id="q11" placeholder="Contoh: pakan terjadwal dan dilarang membuang sampah ke kolam" class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+        </div>
+
+        <!-- Q12 -->
+        <div class="question-block scroll-mt-20">
+          <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5">
+            Q12. Apa kesimpulan dan saran / harapanmu?
+          </label>
+          <textarea id="q12" rows="2" placeholder="Contoh: fasilitas ini sangat positif dan diharapkan seluruh siswa menjaga kebersihannya." class="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition"></textarea>
+        </div>
+      </div>
+
+      <!-- Navigation Step 1 -->
+      <div class="flex items-center justify-between pt-2">
+        <button 
+          type="button" 
+          onclick="resetAndReloadData()" 
+          class="px-3 py-2 rounded-xl border border-red-200 bg-red-50 hover:bg-red-100 text-red-700 font-semibold text-xs transition flex items-center gap-1"
+          title="Kosongkan jawaban untuk mengganti objek pengamatan"
+        >
+          <span>🗑️ Ganti Objek (Kosongkan Jawaban)</span>
+        </button>
+        <button onclick="goToStep(2)" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow transition flex items-center gap-1.5">
+          <span>Lanjut ke Langkah 2: Rakit Kalimat</span>
+          <span>&rarr;</span>
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ============================================================ -->
+    <!-- STEP 2: PERAKITAN KALIMAT & PEMBANTU KONJUNGSI (MINDFUL) -->
+    <!-- ============================================================ -->
+    <section id="step-2-content" class="step-panel hidden space-y-3 sm:space-y-5">
+      
+      <!-- Banner Scaffolding Mindful Construction (Collapsible) -->
+      <details class="group bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-2.5 sm:p-3 text-xs text-blue-950 transition">
+        <summary class="cursor-pointer font-bold text-blue-900 flex items-center justify-between select-none">
+          <span class="flex items-center gap-1.5">
+            <span>🧩</span>
+            <span class="text-[11px] sm:text-xs">Petunjuk Rakit Kalimat SPOK & Konjungsi</span>
+          </span>
+          <span class="text-[10px] bg-blue-200/70 text-blue-800 px-1.5 py-0.5 rounded font-normal group-open:hidden">ℹ️ Buka Petunjuk</span>
+          <span class="text-[10px] bg-blue-200/70 text-blue-800 px-1.5 py-0.5 rounded font-normal hidden group-open:inline">Tutup</span>
+        </summary>
+        <p class="text-[11px] sm:text-xs text-blue-800/90 mt-2 leading-relaxed pt-2 border-t border-blue-200/60">
+          Ubah jawaban singkatmu dari Langkah 1 menjadi kalimat utuh yang baku (berstruktur Subjek, Predikat, Objek, Keterangan). Gunakan <strong>Tombol Sisip Konjungsi</strong> untuk memperhalus hubungan antarkata.
+        </p>
+      </details>
+
+      <!-- Conjunction Toolbox (Compact) -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 border border-slate-200 shadow-xs">
+        <div class="flex flex-wrap items-center justify-between gap-1.5 mb-1.5">
+          <div class="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700">
+            <span class="text-brand-600">⚡</span>
+            <span>Sisip Konjungsi:</span>
+          </div>
+          <span class="text-[10px] text-slate-400">Klik tombol untuk sisipkan ke kotak aktif</span>
+        </div>
+        <div class="flex flex-wrap gap-1" id="conjunction-bar">
+          <button type="button" onclick="insertConjunction('Selain itu, ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Selain itu,</button>
+          <button type="button" onclick="insertConjunction('Di samping itu, ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Di samping itu,</button>
+          <button type="button" onclick="insertConjunction('Objek ini ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Objek ini</button>
+          <button type="button" onclick="insertConjunction('Bagian tersebut ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Bagian tersebut</button>
+          <button type="button" onclick="insertConjunction('Hal ini menunjukkan bahwa ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Hal ini menunjukkan bahwa</button>
+          <button type="button" onclick="insertConjunction('Oleh karena itu, ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Oleh karena itu,</button>
+          <button type="button" onclick="insertConjunction('Dengan demikian, ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Dengan demikian,</button>
+          <button type="button" onclick="insertConjunction('Berdasarkan pengamatan, ')" class="btn-conj px-2 py-1 rounded bg-slate-100 hover:bg-brand-100 hover:text-brand-800 hover:border-brand-300 border border-slate-200 text-[11px] font-medium transition active:scale-95">Berdasarkan pengamatan,</button>
+        </div>
+      </div>
+
+      <!-- Quick Action: Auto Draft Builder Button -->
+      <div class="flex items-center justify-between bg-white rounded-xl px-3 py-2 sm:py-2.5 border border-slate-200 shadow-xs">
+        <div>
+          <span class="text-[11px] sm:text-xs font-bold text-slate-800 block">Bantuan Otomatis:</span>
+          <span class="text-[10px] sm:text-xs text-slate-500">Konversikan jawaban Langkah 1 ke kalimat dasar.</span>
+        </div>
+        <button type="button" id="btn-auto-build-sentences" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-accent-600 hover:bg-accent-700 text-white text-[11px] sm:text-xs font-semibold shadow-xs transition">
+          🚀 Draf Otomatis
+        </button>
+      </div>
+
+      <!-- Accordion / List of Sentence Construction Cards -->
+      <div class="space-y-2.5 sm:space-y-3" id="sentence-builders-container">
+        <!-- Rendered dynamically by JS for 12 questions -->
+      </div>
+
+      <!-- Navigation Step 2 -->
+      <div class="flex items-center justify-between pt-2">
+        <button onclick="goToStep(1)" class="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition">
+          &larr; Kembali ke Langkah 1
+        </button>
+        <button onclick="goToStep(3)" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow transition flex items-center gap-1.5">
+          <span>Lanjut ke Langkah 3: Tata Paragraf</span>
+          <span>&rarr;</span>
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ============================================================ -->
+    <!-- STEP 3: PENATAAN PARAGRAF & PENGHITUNG KALIMAT (DEEP) -->
+    <!-- ============================================================ -->
+    <section id="step-3-content" class="step-panel hidden space-y-3 sm:space-y-5">
+
+      <!-- Banner Scaffolding Deep Processing (Collapsible) -->
+      <details class="group bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-2.5 sm:p-3 text-xs text-purple-950 transition">
+        <summary class="cursor-pointer font-bold text-purple-900 flex items-center justify-between select-none">
+          <span class="flex items-center gap-1.5">
+            <span>🎯</span>
+            <span class="text-[11px] sm:text-xs">Petunjuk Paragraf Padu (Target 4-5 Kalimat)</span>
+          </span>
+          <span class="text-[10px] bg-purple-200/70 text-purple-800 px-1.5 py-0.5 rounded font-normal group-open:hidden">ℹ️ Buka Petunjuk</span>
+          <span class="text-[10px] bg-purple-200/70 text-purple-800 px-1.5 py-0.5 rounded font-normal hidden group-open:inline">Tutup</span>
+        </summary>
+        <p class="text-[11px] sm:text-xs text-purple-800/90 mt-2 leading-relaxed pt-2 border-t border-purple-200/60">
+          Target setiap paragraf adalah <strong>4 sampai 5 kalimat yang padu</strong>. Perhatikan indikator warna dan hitungan kalimat real-time di bawah setiap paragraf!
+        </p>
+      </details>
+
+      <!-- Judul Teks LHO -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs question-block scroll-mt-20">
+        <label class="block text-[11px] sm:text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+          Judul Laporan Hasil Observasi <span class="text-rose-500">*</span>
+        </label>
+        <input type="text" id="final-title" placeholder="Contoh: Laporan Hasil Observasi Kolam Ikan Nila Sekolah" class="w-full text-sm sm:text-base font-bold text-slate-800 rounded-lg border border-slate-300 px-3 py-2 focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" />
+      </div>
+
+      <!-- 3 Paragraph Editors -->
+      <div class="space-y-3 sm:space-y-4">
+        
+        <!-- Paragraf 1: Pernyataan Umum / Klasifikasi -->
+        <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs space-y-2 question-block scroll-mt-20">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">1</span>
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Paragraf 1: Pernyataan Umum</h3>
+              </div>
+            </div>
+            <button onclick="syncParagraphFromSentences(1)" class="text-[11px] text-emerald-700 hover:text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-medium">
+              🔄 Sinkron
+            </button>
+          </div>
+
+          <textarea id="p1-text" rows="4" class="w-full rounded-lg border border-slate-300 p-2.5 text-xs sm:text-sm leading-relaxed text-slate-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" placeholder="Teks paragraf 1..."></textarea>
+
+          <!-- Realtime Sentence Counter & Feedback Badge -->
+          <div class="flex flex-wrap items-center justify-between gap-1.5 pt-0.5 text-xs">
+            <div id="p1-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition text-[11px] sm:text-xs">
+              <!-- Dynamically populated badge -->
+            </div>
+            <div class="text-slate-400 text-[10px] font-mono">
+              Target: 4-5 kalimat
+            </div>
+          </div>
+        </div>
+
+        <!-- Paragraf 2: Deskripsi Bagian -->
+        <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs space-y-2 question-block scroll-mt-20">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded bg-blue-100 text-blue-800 font-bold text-[10px] flex items-center justify-center">2</span>
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Paragraf 2: Deskripsi Bagian</h3>
+              </div>
+            </div>
+            <button onclick="syncParagraphFromSentences(2)" class="text-[11px] text-blue-700 hover:text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-medium">
+              🔄 Sinkron
+            </button>
+          </div>
+
+          <textarea id="p2-text" rows="4" class="w-full rounded-lg border border-slate-300 p-2.5 text-xs sm:text-sm leading-relaxed text-slate-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" placeholder="Teks paragraf 2..."></textarea>
+
+          <!-- Realtime Sentence Counter & Feedback Badge -->
+          <div class="flex flex-wrap items-center justify-between gap-1.5 pt-0.5 text-xs">
+            <div id="p2-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition text-[11px] sm:text-xs">
+              <!-- Dynamically populated badge -->
+            </div>
+            <div class="text-slate-400 text-[10px] font-mono">
+              Target: 4-5 kalimat
+            </div>
+          </div>
+        </div>
+
+        <!-- Paragraf 3: Deskripsi Manfaat & Penutup -->
+        <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs space-y-2 question-block scroll-mt-20">
+          <div class="flex items-center justify-between pb-1.5 border-b border-slate-100">
+            <div class="flex items-center gap-1.5">
+              <span class="w-5 h-5 rounded bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center justify-center">3</span>
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm">Paragraf 3: Deskripsi Manfaat</h3>
+              </div>
+            </div>
+            <button onclick="syncParagraphFromSentences(3)" class="text-[11px] text-amber-700 hover:text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-medium">
+              🔄 Sinkron
+            </button>
+          </div>
+
+          <textarea id="p3-text" rows="4" class="w-full rounded-lg border border-slate-300 p-2.5 text-xs sm:text-sm leading-relaxed text-slate-800 focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" placeholder="Teks paragraf 3..."></textarea>
+
+          <!-- Realtime Sentence Counter & Feedback Badge -->
+          <div class="flex flex-wrap items-center justify-between gap-1.5 pt-0.5 text-xs">
+            <div id="p3-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition text-[11px] sm:text-xs">
+              <!-- Dynamically populated badge -->
+            </div>
+            <div class="text-slate-400 text-[10px] font-mono">
+              Target: 4-5 kalimat
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Navigation Step 3 -->
+      <div class="flex items-center justify-between pt-2">
+        <button onclick="goToStep(2)" class="px-4 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition">
+          &larr; Kembali ke Langkah 2
+        </button>
+        <button onclick="goToStep(4)" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow transition flex items-center gap-1.5">
+          <span>Lanjut ke Langkah 4: Lembar Kerja & PDF</span>
+          <span>&rarr;</span>
+        </button>
+      </div>
+    </section>
+
+
+    <!-- ============================================================ -->
+    <!-- STEP 4: LEMBAR KERJA SISWA DIGITAL & EKSPOR PDF (JOYFUL) -->
+    <!-- ============================================================ -->
+    <section id="step-4-content" class="step-panel hidden space-y-6">
+
+      <!-- Header Lembar Hasil Karya Siswa -->
+      <div class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs flex items-center justify-between">
+        <div>
+          <h2 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-1.5">
+            <span>🎉 Lembar Hasil Karya Teks LHO Siswa</span>
+            <span class="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Siap Cetak / PDF</span>
+          </h2>
+          <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Format standar A4 rapi, siap untuk dokumentasi PTK dan asesmen guru.</p>
+        </div>
+      </div>
+
+      <!-- Document Preview: A4 Official Layout -->
+      <div class="bg-slate-100/80 p-2 sm:p-6 rounded-2xl border border-slate-300 flex justify-center overflow-x-auto">
+        
+        <!-- The Printable Container that will be captured by html2pdf -->
+        <div id="lho-document-page" class="bg-white text-slate-900 shadow-xl rounded-sm p-8 sm:p-12 w-full max-w-[210mm] min-h-[297mm] mx-auto pdf-preview relative flex flex-col justify-between leading-relaxed">
+          
+          <div>
+            <!-- Document Header / Kop Laporan -->
+            <div class="border-b-2 border-slate-900 pb-4 mb-6 text-center">
+              <p class="text-xs uppercase tracking-widest font-sans font-bold text-slate-600 mb-1">
+                LEMBAR KERJA PESERTA DIDIK (LKPD) DIGITAL
+              </p>
+              <h2 class="text-lg sm:text-xl font-bold uppercase tracking-wide text-slate-950">
+                LAPORAN HASIL OBSERVASI (TEKS LHO)
+              </h2>
+              <p class="text-xs text-slate-600 font-sans mt-0.5" id="preview-sekolah-header">
+                SMA / SMK Kelas X - Bahasa Indonesia (Kurikulum Merdeka)
+              </p>
+            </div>
+
+            <!-- Student Metadata Box -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3.5 mb-6 font-sans text-xs grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <div>
+                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Nama Siswa:</span>
+                <span id="doc-nama" class="font-bold text-slate-800">-</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Kelas:</span>
+                <span id="doc-kelas" class="font-bold text-slate-800">-</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Jurusan:</span>
+                <span id="doc-jurusan" class="font-bold text-slate-800">-</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[10px] uppercase font-semibold">No. Presensi:</span>
+                <span id="doc-presensi" class="font-bold text-slate-800">-</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Sekolah:</span>
+                <span id="doc-sekolah" class="font-bold text-slate-800">-</span>
+              </div>
+              <div>
+                <span class="text-slate-500 block text-[10px] uppercase font-semibold">Waktu Observasi:</span>
+                <span id="doc-tanggal" class="font-bold text-slate-800">-</span>
+              </div>
+            </div>
+
+            <!-- Judul Teks -->
+            <div class="text-center my-6">
+              <h3 id="doc-title" class="text-base sm:text-lg font-bold text-slate-950 uppercase underline decoration-1 underline-offset-4">
+                JUDUL LAPORAN OBSERVASI
+              </h3>
+            </div>
+
+            <!-- Isi 3 Paragraf Terstruktur -->
+            <div class="space-y-5 text-sm sm:text-[15px] text-justify text-slate-800 leading-relaxed font-serif">
+              
+              <!-- Paragraf 1 -->
+              <div>
+                <p class="text-[11px] font-sans font-bold text-emerald-800 uppercase tracking-wider mb-1">
+                  I. Pernyataan Umum / Klasifikasi
+                </p>
+                <p id="doc-p1" class="paragraph-indent leading-relaxed">
+                  (Paragraf 1 belum diisi...)
+                </p>
+              </div>
+
+              <!-- Paragraf 2 -->
+              <div>
+                <p class="text-[11px] font-sans font-bold text-blue-800 uppercase tracking-wider mb-1">
+                  II. Deskripsi Bagian
+                </p>
+                <p id="doc-p2" class="paragraph-indent leading-relaxed">
+                  (Paragraf 2 belum diisi...)
+                </p>
+              </div>
+
+              <!-- Paragraf 3 -->
+              <div>
+                <p class="text-[11px] font-sans font-bold text-amber-800 uppercase tracking-wider mb-1">
+                  III. Deskripsi Manfaat & Penutup
+                </p>
+                <p id="doc-p3" class="paragraph-indent leading-relaxed">
+                  (Paragraf 3 belum diisi...)
+                </p>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Bottom: Penilaian & Tanda Tangan (Sangat Bagus untuk Instrumen PTK) -->
+          <div class="mt-12 pt-6 border-t border-slate-300 font-sans text-xs">
+            <div class="grid grid-cols-2 gap-8 text-center">
+              <div>
+                <p class="text-slate-500 mb-12">Peserta Didik (Pengamat),</p>
+                <p id="sign-student-name" class="font-bold text-slate-800 underline decoration-slate-400 underline-offset-2">(Nama Siswa)</p>
+              </div>
+              <div>
+                <p class="text-slate-500 mb-12">Guru Mata Pelajaran Bahasa Indonesia,</p>
+                <p class="font-bold text-slate-800 underline decoration-slate-400 underline-offset-2">Wisnu Tri Cahyo, S.Pd.</p>
+              </div>
+            </div>
+
+            <!-- Rubrik Refleksi Singkat PTK -->
+            <div class="mt-6 pt-4 border-t border-dashed border-slate-200 text-[10px] text-slate-500 flex justify-between">
+              <span>Model: Scaffolding Deep Learning (Meaningful &bull; Mindful &bull; Deep &bull; Joyful)</span>
+              <span>Kriteria Paragraf Padu: 4-5 Kalimat/Paragraf</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Navigation Step 4 (Hanya tombol Kembali ke Langkah 3 dan Unduh Dokumen PDF) -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-slate-200">
+        <button onclick="goToStep(3)" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs">
+          <span>&larr;</span>
+          <span>Kembali ke Langkah 3</span>
+        </button>
+        <button id="btn-download-pdf" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-95 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+          <span>📥</span>
+          <span>Unduh Dokumen PDF</span>
+        </button>
+      </div>
+
+      <!-- Settings & Data Management Section -->
+      <div class="mt-8 pt-4 border-t border-slate-200">
+        <details class="bg-white rounded-xl border border-slate-200 shadow-xs p-3.5 text-xs group">
+          <summary class="cursor-pointer font-bold text-slate-700 flex items-center justify-between select-none">
+            <span class="flex items-center gap-2">
+              <span>⚙️</span>
+              <span class="text-xs sm:text-sm">Pengaturan & Manajemen Data (Settings)</span>
+            </span>
+            <span class="text-[11px] text-slate-400 font-normal group-open:hidden">Buka Pengaturan &darr;</span>
+            <span class="text-[11px] text-slate-400 font-normal hidden group-open:inline">Tutup &uarr;</span>
+          </summary>
+          <div class="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-slate-600">
+            <div>
+              <p class="font-semibold text-slate-800">Mulai Pengamatan Observasi Baru</p>
+              <p class="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                Menghapus seluruh rekaman data di penyimpanan lokal (localStorage) browser ini dan memuat ulang halaman untuk memulai observasi dari lembar kosong.
+              </p>
+            </div>
+            <button 
+              type="button" 
+              onclick="resetAndReloadData()" 
+              class="px-3.5 py-2 rounded-lg bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-xs transition active:scale-95 shrink-0 flex items-center justify-center gap-1.5"
+            >
+              <span>🗑️</span>
+              <span>Reset Data & Observasi Baru</span>
+            </button>
+          </div>
+        </details>
+      </div>
+
+    </section>
+
+
+    <!-- ============================================================ -->
+    <!-- STEP 5: IDENTITAS PENGEMBANG MEDIA PEMBELAJARAN -->
+    <!-- ============================================================ -->
+    <section id="step-5-content" class="step-panel hidden space-y-4 sm:space-y-6">
+      
+      <!-- Card Profil Pengembang -->
+      <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-sm max-w-3xl mx-auto">
+        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-6">
+          
+          <!-- Avatar Icon Inisial Pengembang -->
+          <div class="shrink-0 text-center">
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white flex flex-col items-center justify-center shadow-md ring-4 ring-emerald-50 mx-auto">
+              <span class="text-2xl sm:text-3xl font-extrabold tracking-wider">WTC</span>
+              <span class="text-[9px] uppercase tracking-widest text-emerald-200 font-semibold mt-0.5">Guru</span>
+            </div>
+            <span class="inline-block mt-2.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold tracking-wide">
+              Pengembang Media
+            </span>
+          </div>
+
+          <!-- Data Identitas Pengembang -->
+          <div class="flex-1 text-center sm:text-left space-y-4 w-full">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200 inline-block mb-1.5">
+                Profil Pengembang Web
+              </span>
+              <h2 class="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">
+                Wisnu Tri Cahyo, S.Pd.
+              </h2>
+              <p class="text-xs sm:text-sm text-emerald-800 font-semibold mt-0.5">
+                Guru Mata Pelajaran Bahasa Indonesia
+              </p>
+            </div>
+
+            <!-- Detail List Identitas -->
+            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 sm:p-4 space-y-2.5 text-xs sm:text-sm">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200/60 gap-0.5">
+                <span class="text-slate-500 font-medium">Nama Lengkap</span>
+                <span class="font-bold text-slate-800">Wisnu Tri Cahyo, S.Pd.</span>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200/60 gap-0.5">
+                <span class="text-slate-500 font-medium">Jabatan / Profesi</span>
+                <span class="font-bold text-emerald-800">Guru Mata Pelajaran Bahasa Indonesia</span>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200/60 gap-0.5">
+                <span class="text-slate-500 font-medium">NIM</span>
+                <span class="font-bold font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">25248610027</span>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-slate-200/60 gap-0.5">
+                <span class="text-slate-500 font-medium">Program Studi</span>
+                <span class="font-bold text-slate-800">PPG Bahasa Indonesia</span>
+              </div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5">
+                <span class="text-slate-500 font-medium">LPTK Penyelenggara</span>
+                <span class="font-bold text-slate-800">Universitas PGRI Yogyakarta</span>
+              </div>
+            </div>
+
+            <!-- Deskripsi Singkat Media -->
+            <div class="bg-emerald-50/60 border border-emerald-200/70 rounded-xl p-3.5 text-[11px] sm:text-xs text-emerald-950 leading-relaxed">
+              <p class="font-bold text-emerald-900 mb-1 flex items-center gap-1.5">
+                <span>💡</span> <span>Tujuan Pengembangan Media:</span>
+              </p>
+              <p>
+                Web ini dirancang sebagai media scaffolding digital interaktif dalam pembelajaran menulis Teks Laporan Hasil Observasi (LHO) berbasis Deep Learning untuk membantu peserta didik SMA/SMK Kelas X menyusun teks laporan secara terstruktur, runtut, dan bermakna.
+              </p>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Tombol Aksi di Bawah Profil -->
+        <div class="mt-8 pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <button onclick="goToStep(4)" class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 shadow-xs">
+            <span>&larr;</span>
+            <span>Kembali ke Langkah 4: Hasil & PDF</span>
+          </button>
+          <button onclick="goToStep(1)" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-xs sm:text-sm shadow-md transition flex items-center justify-center gap-1.5">
+            <span>Mulai / Cek Observasi (Langkah 1)</span>
+            <span>&rarr;</span>
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Modal Konfirmasi Reset / Ganti Objek Custom (Aman di semua browser & WebView HP) -->
+  <div id="reset-confirm-modal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 text-center space-y-4 animate-in fade-in zoom-in duration-150">
+      <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+        🗑️
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-800">Kosongkan Jawaban?</h3>
+        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+          Semua isian pertanyaan, draf kalimat, dan paragraf akan dihapus bersih sehingga kamu bisa mengganti objek pengamatan baru dari awal.
+        </p>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button 
+          type="button" 
+          onclick="closeResetModal()" 
+          class="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-100 transition"
+        >
+          Batal
+        </button>
+        <button 
+          type="button" 
+          onclick="executeConfirmedReset()" 
+          class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs shadow-md transition active:scale-95"
+        >
+          Ya, Kosongkan
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast-notif" class="fixed bottom-6 right-6 bg-slate-900 text-white px-4 py-2.5 rounded-xl text-xs font-medium shadow-2xl transition-all duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2">
+    <span id="toast-icon">✅</span>
+    <span id="toast-msg">Notifikasi</span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-5 text-center text-xs text-slate-500">
+    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>&copy; Media Pembelajaran PTK Bahasa Indonesia Kelas X SMA/SMK &bull; Dikembangkan oleh: <button onclick="goToStep(5)" class="font-bold text-emerald-700 hover:underline">Wisnu Tri Cahyo, S.Pd. (PPG UPY)</button></p>
+      <p class="text-slate-400">Dukungan: Tailwind CSS &bull; html2pdf.js &bull; Vanilla JavaScript</p>
+    </div>
+  </footer>
+
+  <!-- ============================================================ -->
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <!-- ============================================================ -->
+  <script>
+    // State App
+    let currentStep = 1;
+    let activeTextareaId = null;
+
+    // Pertanyaan Meta
+    const questionMetadata = [
+      { id: 'q1', group: 1, title: 'Nama Objek', prompt: 'Apa nama objek/fasilitas yang diamati?', defaultPrefix: 'Objek yang diamati dalam kegiatan ini adalah ' },
+      { id: 'q2', group: 1, title: 'Kategori Objek', prompt: 'Masuk dalam kategori apakah objek tersebut?', defaultPrefix: 'Objek tersebut tergolong ke dalam kategori ' },
+      { id: 'q3', group: 1, title: 'Lokasi Objek', prompt: 'Di mana lokasi objek berada di sekolah?', defaultPrefix: 'Fasilitas ini terletak di area ' },
+      { id: 'q4', group: 1, title: 'Waktu Pengamatan', prompt: 'Kapan pengamatan dilakukan?', defaultPrefix: 'Kegiatan pengamatan dilaksanakan pada ' },
+      { id: 'q5', group: 1, title: 'Definisi Umum', prompt: 'Apa definisi atau gambaran umum objek?', defaultPrefix: 'Secara umum, objek ini merupakan ' },
+
+      { id: 'q6', group: 2, title: 'Ciri Fisik Utama', prompt: 'Bagaimana bentuk, ukuran, dan warna objek?', defaultPrefix: 'Secara fisik, objek ini memiliki bentuk dan ukuran ' },
+      { id: 'q7', group: 2, title: 'Komponen / Isi', prompt: 'Bagian atau isi apa saja yang ada?', defaultPrefix: 'Bagian tersebut terdiri atas beberapa komponen penting, seperti ' },
+      { id: 'q8', group: 2, title: 'Kondisi Kelayakan', prompt: 'Bagaimana kondisi kebersihan dan kerapiannya?', defaultPrefix: 'Berdasarkan pengamatan, kondisi kelayakan dan kebersihannya tampak ' },
+      { id: 'q9', group: 2, title: 'Cara Kerja / Aktivitas', prompt: 'Bagaimana cara kerja atau aktivitas di sekitarnya?', defaultPrefix: 'Sementara itu, aktivitas yang berlangsung di sekitarnya menunjukkan bahwa ' },
+
+      { id: 'q10', group: 3, title: 'Manfaat Utama', prompt: 'Apa fungsi atau manfaat objek bagi warga sekolah?', defaultPrefix: 'Keberadaan objek ini memberikan manfaat yang nyata bagi warga sekolah sebagai ' },
+      { id: 'q11', group: 3, title: 'Bentuk Perawatan', prompt: 'Bagaimana pemeliharaan atau aturan penggunaannya?', defaultPrefix: 'Selain itu, pemeliharaan objek dilakukan secara rutin melalui ' },
+      { id: 'q12', group: 3, title: 'Kesimpulan & Harapan', prompt: 'Apa kesimpulan dan saranmu?', defaultPrefix: 'Dengan demikian, keberadaan fasilitas ini sangat bermanfaat sehingga patut dijaga kelestariannya bersama-sama.' }
+    ];
+
+    // Data Contoh Observasi Preset (Kantin Sehat Sekolah)
+    const demoData = {
+      nama: 'Ahmad Fauzan Pratama',
+      kelas: 'X (Sepuluh)',
+      jurusan: 'MIPA 1',
+      presensi: '04',
+      sekolah: 'SMA Negeri 1 Prestasi',
+      tanggal: 'Selasa, 29 September 2026, pukul 09.30 WIB',
+      title: 'Laporan Hasil Observasi Kolam Ikan Nila dan Taman Teratai Sekolah',
+      q1: 'Kolam Ikan Nila dan Taman Teratai Sekolah',
+      q2: 'ekosistem perairan buatan dan fasilitas penyejuk lingkungan sekolah',
+      q3: 'area halaman tengah sekolah, tepat di sebelah timur gedung perpustakaan',
+      q4: 'hari Selasa pukul 09.30 WIB saat jam istirahat pertama dalam suasana cuaca cerah',
+      q5: 'sarana edukasi biologi terapan sekaligus ruang terbuka hijau yang dirancang untuk mendukung suasana belajar yang nyaman',
+      q6: 'persegi panjang berukuran 4 x 3 meter dengan kedalaman air sekitar 80 sentimeter serta didominasi dinding semen abu-abu alami',
+      q7: 'saluran pipa sirkulasi air, bebatuan kali di tepian, beberapa rumpun tanaman teratai berbunga merah muda, dan puluhan ekor ikan nila merah yang berenang aktif',
+      q8: 'air kolam tampak jernih, sirkulasi oksigen mengalir lancar, dan kawasan di sekitar kolam bebas dari sampah plastik',
+      q9: 'pompa listrik mengalirkan air terjun mini untuk menjaga kadar oksigen, sedangkan siswa sering duduk di tepian kolam untuk berdiskusi',
+      q10: 'laboratorium alam untuk mata pelajaran Biologi, tempat relaksasi bagi siswa dan guru di sela-sela jam pelajaran, serta penjaga keasrian lanskap sekolah',
+      q11: 'pemberian pakan terjadwal dua kali sehari oleh petugas piket Adiwiyata serta penerapan aturan ketat dilarang membuang benda asing ke dalam kolam',
+      q12: 'keberadaan kolam ikan sekolah memberikan dampak edukatif dan ekologis yang positif, sehingga seluruh warga sekolah diharapkan senantiasa merawat kebersihannya.'
+    };
+
+    // Inisialisasi saat Halaman Dimuat
+    window.addEventListener('DOMContentLoaded', () => {
+      // Inisialisasi tanggal default
+      const dateInput = document.getElementById('identitas-tanggal');
+      if (!dateInput.value) {
+        const today = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        dateInput.value = today.toLocaleDateString('id-ID', options) + ' (Jam Istirahat Sekolah)';
+      }
+
+      // Render sentence builders for Step 2
+      renderSentenceBuilders();
+
+      // Load data from LocalStorage
+      loadFromLocalStorage();
+
+      // Setup Listeners
+      setupInputListeners();
+
+      // Update calculations
+      recalculateAllSentenceCounts();
+
+      // Show Step 1
+      goToStep(1);
+    });
+
+    // Navigasi Langkah (Stepper)
+    function goToStep(step) {
+      currentStep = step;
+
+      // Sembunyikan semua step panel
+      document.querySelectorAll('.step-panel').forEach(panel => panel.classList.add('hidden'));
+
+      // Tampilkan panel yang dipilih
+      const activePanel = document.getElementById(`step-${step}-content`);
+      if (activePanel) activePanel.classList.remove('hidden');
+
+      // Update Tab Styles pada Sticky Slim Progress Bar (1 sampai 5)
+      for (let i = 1; i <= 5; i++) {
+        const tab = document.getElementById(`step-tab-${i}`);
+        if (!tab) continue;
+        if (i === step) {
+          tab.className = 'step-tab py-1 px-1 rounded transition text-center font-bold bg-emerald-600 text-white shadow-xs truncate text-[10px] sm:text-xs ring-1 ring-white/50';
+        } else if (i < step) {
+          tab.className = 'step-tab py-1 px-1 rounded transition text-center font-medium bg-emerald-950/70 text-emerald-300 hover:bg-emerald-900 truncate text-[10px] sm:text-xs';
+        } else {
+          tab.className = 'step-tab py-1 px-1 rounded transition text-center font-normal text-slate-300 hover:text-white truncate text-[10px] sm:text-xs';
+        }
+      }
+
+      // Update Progress Bar
+      const progressBar = document.getElementById('progress-bar-fill');
+      if (progressBar) {
+        progressBar.style.width = (step * 25) + '%';
+      }
+
+      // Jika pindah ke Step 2, update draf sumber
+      if (step === 2) {
+        updateStep2DraftSources();
+      }
+
+      // Jika pindah ke Step 3, kompilasikan paragraf jika kosong
+      if (step === 3) {
+        autoPopulateParagraphsIfEmpty();
+        recalculateAllSentenceCounts();
+      }
+
+      // Jika pindah ke Step 4, susun lembar hasil
+      if (step === 4) {
+        refreshDocumentPreview();
+      }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Render 12 Sentence Builders di Langkah 2
+    function renderSentenceBuilders() {
+      const container = document.getElementById('sentence-builders-container');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      let currentGroup = 0;
+      const groupHeaders = {
+        1: { title: 'Kelompok 1: Pernyataan Umum / Klasifikasi (Kalimat 1 - 5)', color: 'border-emerald-200 bg-emerald-50/50 text-emerald-900' },
+        2: { title: 'Kelompok 2: Deskripsi Bagian (Kalimat 6 - 9)', color: 'border-blue-200 bg-blue-50/50 text-blue-900' },
+        3: { title: 'Kelompok 3: Deskripsi Manfaat & Penutup (Kalimat 10 - 12)', color: 'border-amber-200 bg-amber-50/50 text-amber-900' }
+      };
+
+      questionMetadata.forEach((q, index) => {
+        if (q.group !== currentGroup) {
+          currentGroup = q.group;
+          const groupHeaderDiv = document.createElement('div');
+          groupHeaderDiv.className = `p-3 rounded-xl border font-bold text-xs sm:text-sm mt-4 flex items-center justify-between ${groupHeaders[currentGroup].color}`;
+          groupHeaderDiv.innerHTML = `<span>${groupHeaders[currentGroup].title}</span><span class="text-xs font-normal opacity-80">Target struktur LHO</span>`;
+          container.appendChild(groupHeaderDiv);
+        }
+
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs space-y-2 transition question-block scroll-mt-20 hover:border-slate-300';
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-1.5">
+            <div>
+              <span class="text-[11px] sm:text-xs font-bold text-brand-700 uppercase tracking-wider">Kalimat ${index + 1}: ${q.title}</span>
+              <p class="text-[10px] sm:text-xs text-slate-500">${q.prompt}</p>
+            </div>
+            <span class="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">Q${index + 1}</span>
+          </div>
+
+          <!-- Raw answer preview from Step 1 -->
+          <div class="bg-slate-50 border border-slate-200/80 rounded-lg p-2 text-[11px] sm:text-xs text-slate-600 flex items-start gap-1.5">
+            <span class="text-slate-400 font-semibold select-none text-[10px] sm:text-xs">Jawaban Asal:</span>
+            <span id="source-preview-${q.id}" class="italic text-slate-700 flex-1 text-[11px] sm:text-xs">(Belum diisi di Langkah 1)</span>
+          </div>
+
+          <!-- Sentence construction box -->
+          <div>
+            <label class="block text-[11px] sm:text-xs font-semibold text-slate-700 mb-0.5 flex items-center justify-between">
+              <span>Sunting Kalimat Baku (SPOK):</span>
+              <span id="valid-dot-${q.id}" class="text-[10px] text-amber-600">Akhiri titik (.)</span>
+            </label>
+            <textarea 
+              id="sentence-${q.id}" 
+              rows="2" 
+              class="sentence-input w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs sm:text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-200 outline-none transition" 
+              placeholder="Rangkai kalimat lengkap berstruktur SPOK..."
+              onfocus="activeTextareaId = 'sentence-${q.id}'"
+            ></textarea>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Update Jawaban Asal di Step 2 dari Step 1
+    function updateStep2DraftSources() {
+      questionMetadata.forEach(q => {
+        const inputVal = document.getElementById(q.id)?.value.trim();
+        const previewEl = document.getElementById(`source-preview-${q.id}`);
+        if (previewEl) {
+          if (inputVal) {
+            previewEl.textContent = inputVal;
+            previewEl.classList.remove('italic', 'text-slate-400');
+          } else {
+            previewEl.textContent = '(Belum diisi di Langkah 1)';
+            previewEl.classList.add('italic', 'text-slate-400');
+          }
+        }
+      });
+    }
+
+    // Tombol Sisip Konjungsi
+    function insertConjunction(conjText) {
+      let targetEl = null;
+
+      // Cek apakah ada textarea yang sedang aktif/fokus
+      if (activeTextareaId) {
+        targetEl = document.getElementById(activeTextareaId);
+      }
+
+      // Jika tidak ada, gunakan textarea kalimat pertama yang ada
+      if (!targetEl) {
+        targetEl = document.querySelector('.sentence-input');
+      }
+
+      if (!targetEl) return;
+
+      const startPos = targetEl.selectionStart;
+      const endPos = targetEl.selectionEnd;
+      const originalText = targetEl.value;
+
+      // Sisipkan di posisi kursor
+      targetEl.value = originalText.substring(0, startPos) + conjText + originalText.substring(endPos);
+      
+      // Kembalikan fokus dan kursor setelah teks sisipan
+      targetEl.focus();
+      targetEl.selectionStart = targetEl.selectionEnd = startPos + conjText.length;
+
+      // Trigger autosave
+      triggerSave();
+      showToast('⚡ Konjungsi disisipkan!');
+    }
+
+    // Otomatis Buat Draf Kalimat dari Jawaban Langkah 1
+    function autoBuildSentencesFromAnswers() {
+      let builtCount = 0;
+      questionMetadata.forEach(q => {
+        const rawAns = document.getElementById(q.id)?.value.trim();
+        const sentenceInput = document.getElementById(`sentence-${q.id}`);
+        if (!sentenceInput) return;
+
+        if (rawAns) {
+          // Buat kalimat teratur
+          let sentence = rawAns;
+          
+          // Beri huruf kapital di awal jika belum
+          sentence = sentence.charAt(0).toUpperCase() + sentence.slice(1);
+
+          // Jika belum ada tanda titik di akhir, tambahkan titik
+          if (!sentence.endsWith('.') && !sentence.endsWith('!') && !sentence.endsWith('?')) {
+            sentence += '.';
+          }
+
+          // Cek awalan agar mengalir dengan baik
+          if (!sentence.toLowerCase().startsWith('objek') && !sentence.toLowerCase().startsWith('secara') && !sentence.toLowerCase().startsWith('fasilitas')) {
+            // Bisa diperhalus dengan kata pengantar
+            if (q.id === 'q1' && !sentence.toLowerCase().includes('objek')) {
+              sentence = `Objek yang diobservasi adalah ${rawAns.toLowerCase().endsWith('.') ? rawAns : rawAns + '.'}`;
+            } else if (q.id === 'q2' && !sentence.toLowerCase().includes('kategori')) {
+              sentence = `Objek ini tergolong ke dalam kategori ${rawAns.toLowerCase().endsWith('.') ? rawAns : rawAns + '.'}`;
+            } else if (q.id === 'q3' && !sentence.toLowerCase().includes('terletak')) {
+              sentence = `Fasilitas ini terletak di ${rawAns.toLowerCase().endsWith('.') ? rawAns : rawAns + '.'}`;
+            } else if (q.id === 'q4' && !sentence.toLowerCase().includes('pengamatan')) {
+              sentence = `Pengamatan dilaksanakan pada ${rawAns.toLowerCase().endsWith('.') ? rawAns : rawAns + '.'}`;
+            }
+          }
+
+          sentenceInput.value = sentence;
+          builtCount++;
+        }
+      });
+
+      triggerSave();
+      showToast(`✅ Berhasil menyusun ${builtCount} draf kalimat! Silakan periksa kembali.`);
+    }
+
+    document.getElementById('btn-auto-build-sentences')?.addEventListener('click', autoBuildSentencesFromAnswers);
+
+    // Satukan Kalimat Menjadi Paragraf di Step 3
+    function autoPopulateParagraphsIfEmpty() {
+      // Paragraf 1: Q1 - Q5
+      const p1El = document.getElementById('p1-text');
+      if (p1El && (!p1El.value.trim() || p1El.dataset.synced !== 'true')) {
+        syncParagraphFromSentences(1);
+      }
+
+      // Paragraf 2: Q6 - Q9
+      const p2El = document.getElementById('p2-text');
+      if (p2El && (!p2El.value.trim() || p2El.dataset.synced !== 'true')) {
+        syncParagraphFromSentences(2);
+      }
+
+      // Paragraf 3: Q10 - Q12
+      const p3El = document.getElementById('p3-text');
+      if (p3El && (!p3El.value.trim() || p3El.dataset.synced !== 'true')) {
+        syncParagraphFromSentences(3);
+      }
+
+      // Default Title
+      const titleEl = document.getElementById('final-title');
+      const q1Val = document.getElementById('q1')?.value.trim();
+      if (titleEl && !titleEl.value.trim()) {
+        titleEl.value = q1Val ? `Laporan Hasil Observasi: ${q1Val}` : 'Laporan Hasil Observasi Lingkungan Sekolah';
+      }
+    }
+
+    // Fungsi Sinkronkan Paragraf Tertentu dari Kalimat-kalimatnya
+    function syncParagraphFromSentences(groupNum) {
+      const sentences = [];
+      questionMetadata.filter(q => q.group === groupNum).forEach(q => {
+        let sent = document.getElementById(`sentence-${q.id}`)?.value.trim();
+        if (!sent) {
+          // Fallback ke raw answer
+          sent = document.getElementById(q.id)?.value.trim();
+        }
+        if (sent) {
+          if (!sent.endsWith('.') && !sent.endsWith('!') && !sent.endsWith('?')) {
+            sent += '.';
+          }
+          sentences.push(sent);
+        }
+      });
+
+      const targetEl = document.getElementById(`p${groupNum}-text`);
+      if (targetEl) {
+        targetEl.value = sentences.join(' ');
+        targetEl.dataset.synced = 'true';
+        updateParagraphSentenceCount(groupNum);
+        triggerSave();
+      }
+    }
+
+    // Algoritma Penghitung Kalimat Cerdas (Real-time Sentence Counter)
+    function countSentences(text) {
+      if (!text || !text.trim()) return 0;
+      
+      // Bersihkan spasi ganda
+      const cleaned = text.trim();
+      
+      // Pisahkan berdasarkan tanda akhir kalimat (. ! ?) yang diikuti oleh spasi atau akhir baris
+      // Meminimalisir salah hitung seperti "dsb." atau "Jl." atau angka "1.5"
+      const sentences = cleaned.split(/(?<=[.?!])\s+(?=[A-Z0-9"“']|$)/);
+      
+      let validCount = 0;
+      for (const s of sentences) {
+        const trimmed = s.trim();
+        if (trimmed.length > 3 && /[.?!]$/.test(trimmed)) {
+          validCount++;
+        }
+      }
+
+      // Fallback jika pemisahan regex ketat mengembalikan 0 tapi ada tanda titik
+      if (validCount === 0) {
+        const dotMatches = cleaned.match(/[.?!]/g);
+        validCount = dotMatches ? dotMatches.length : 0;
+      }
+
+      return validCount;
+    }
+
+    // Update Real-time Badge Paragraf
+    function updateParagraphSentenceCount(groupNum) {
+      const pText = document.getElementById(`p${groupNum}-text`)?.value || '';
+      const badgeEl = document.getElementById(`p${groupNum}-badge`);
+      if (!badgeEl) return;
+
+      const count = countSentences(pText);
+
+      if (count === 0) {
+        badgeEl.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-600';
+        badgeEl.innerHTML = `<span>⚪</span> <span>Paragraf ini masih kosong. Ketik atau sinkronkan kalimat.</span>`;
+      } else if (count < 4) {
+        badgeEl.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 text-amber-900 font-semibold';
+        badgeEl.innerHTML = `<span>⚠️</span> <span>Paragrafmu baru <strong>${count} kalimat</strong>. Tambahkan penjelasan atau kata hubung agar menjadi <strong>4-5 kalimat</strong>.</span>`;
+      } else if (count >= 4 && count <= 5) {
+        badgeEl.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 font-bold';
+        badgeEl.innerHTML = `<span>✅</span> <span>Sempurna! Paragraf ini sudah padu dengan <strong>${count} kalimat</strong>.</span>`;
+      } else {
+        badgeEl.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-300 bg-blue-50 text-blue-900 font-medium';
+        badgeEl.innerHTML = `<span>ℹ️</span> <span>Paragraf ini memiliki <strong>${count} kalimat</strong> (cukup panjang). Pastikan gagasan tetap fokus dan padu.</span>`;
+      }
+    }
+
+    function recalculateAllSentenceCounts() {
+      updateParagraphSentenceCount(1);
+      updateParagraphSentenceCount(2);
+      updateParagraphSentenceCount(3);
+    }
+
+    // Refresh Preview Dokumen di Step 4
+    function refreshDocumentPreview() {
+      const nama = document.getElementById('identitas-nama')?.value.trim() || 'Ahmad Fauzan Pratama';
+      const kelas = document.getElementById('identitas-kelas')?.value.trim() || 'X (Sepuluh)';
+      const jurusan = document.getElementById('identitas-jurusan')?.value.trim() || 'MIPA 1';
+      const presensi = document.getElementById('identitas-presensi')?.value.trim() || '04';
+      const sekolah = document.getElementById('identitas-sekolah')?.value.trim() || 'SMA / SMK Negeri';
+      const tanggal = document.getElementById('identitas-tanggal')?.value.trim() || 'September 2026';
+      const title = document.getElementById('final-title')?.value.trim() || 'LAPORAN HASIL OBSERVASI';
+
+      const p1 = document.getElementById('p1-text')?.value.trim() || '(Paragraf 1 belum diisi...)';
+      const p2 = document.getElementById('p2-text')?.value.trim() || '(Paragraf 2 belum diisi...)';
+      const p3 = document.getElementById('p3-text')?.value.trim() || '(Paragraf 3 belum diisi...)';
+
+      document.getElementById('doc-nama').textContent = nama;
+      document.getElementById('doc-kelas').textContent = kelas;
+      document.getElementById('doc-jurusan').textContent = jurusan;
+      document.getElementById('doc-presensi').textContent = presensi;
+      document.getElementById('doc-sekolah').textContent = sekolah;
+      document.getElementById('doc-tanggal').textContent = tanggal;
+      document.getElementById('doc-title').textContent = title;
+
+      document.getElementById('doc-p1').textContent = p1;
+      document.getElementById('doc-p2').textContent = p2;
+      document.getElementById('doc-p3').textContent = p3;
+
+      document.getElementById('sign-student-name').textContent = nama;
+      document.getElementById('preview-sekolah-header').textContent = `${sekolah} - Kelas ${kelas} ${jurusan} (Absen: ${presensi}) - Bahasa Indonesia`;
+    }
+
+    // Unduh Dokumen PDF Menggunakan html2pdf.js
+    document.getElementById('btn-download-pdf')?.addEventListener('click', () => {
+      refreshDocumentPreview();
+      const element = document.getElementById('lho-document-page');
+      if (!element) {
+        showToast('⚠️ Halaman dokumen tidak ditemukan.');
+        return;
+      }
+
+      const nama = (document.getElementById('identitas-nama')?.value.trim() || 'Siswa').replace(/[^a-zA-Z0-9]/g, '_');
+      const kelas = (document.getElementById('identitas-kelas')?.value.trim() || 'X').replace(/[^a-zA-Z0-9]/g, '_');
+      const presensi = (document.getElementById('identitas-presensi')?.value.trim() || 'Absen').replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `LHO_${nama}_Kelas_${kelas}_No_${presensi}.pdf`;
+
+      showToast('⏳ Menyiapkan file PDF resmi ukuran A4...');
+
+      // Jika library html2pdf tersedia
+      if (typeof html2pdf !== 'undefined') {
+        const opt = {
+          margin: [10, 10, 10, 10], // mm
+          filename: filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { 
+            scale: 2, 
+            useCORS: true, 
+            logging: false,
+            letterRendering: true 
+          },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdf().set(opt).from(element).save().then(() => {
+          showToast('✅ Berhasil mengunduh dokumen PDF!');
+        }).catch(err => {
+          console.error('PDF generation error:', err);
+          showToast('⚠️ Gagal membuat PDF otomatis. Membuka dialog cetak sistem...');
+          window.print();
+        });
+      } else {
+        // Fallback aman untuk browser/webview tanpa CDN
+        window.print();
+      }
+    });
+
+    // Auto-save & LocalStorage (dengan Debounce agar mengetik sangat mulus & tanpa jeda/lag)
+    let saveDebounceTimer = null;
+    function triggerSave() {
+      if (saveDebounceTimer) clearTimeout(saveDebounceTimer);
+      saveDebounceTimer = setTimeout(() => {
+        executeSave();
+      }, 500); // Debounce 500ms agar performa mengetik 100% instan
+    }
+
+    function executeSave() {
+      const data = {
+        nama: document.getElementById('identitas-nama')?.value || '',
+        kelas: document.getElementById('identitas-kelas')?.value || '',
+        jurusan: document.getElementById('identitas-jurusan')?.value || '',
+        presensi: document.getElementById('identitas-presensi')?.value || '',
+        sekolah: document.getElementById('identitas-sekolah')?.value || '',
+        tanggal: document.getElementById('identitas-tanggal')?.value || '',
+        title: document.getElementById('final-title')?.value || '',
+        p1: document.getElementById('p1-text')?.value || '',
+        p2: document.getElementById('p2-text')?.value || '',
+        p3: document.getElementById('p3-text')?.value || '',
+        questions: {},
+        sentences: {}
+      };
+
+      questionMetadata.forEach(q => {
+        data.questions[q.id] = document.getElementById(q.id)?.value || '';
+        data.sentences[q.id] = document.getElementById(`sentence-${q.id}`)?.value || '';
+      });
+
+      localStorage.setItem('scaffolding_lho_data', JSON.stringify(data));
+
+      const timeEl = document.getElementById('save-timestamp');
+      if (timeEl) {
+        const now = new Date();
+        timeEl.textContent = `Tersimpan ${now.toLocaleTimeString('id-ID')}`;
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem('scaffolding_lho_data');
+        if (!raw) return;
+        const data = JSON.parse(raw);
+
+        if (data.nama) document.getElementById('identitas-nama').value = data.nama;
+        if (data.kelas) document.getElementById('identitas-kelas').value = data.kelas;
+        if (data.jurusan) document.getElementById('identitas-jurusan').value = data.jurusan;
+        if (data.presensi) document.getElementById('identitas-presensi').value = data.presensi;
+        if (data.sekolah) document.getElementById('identitas-sekolah').value = data.sekolah;
+        if (data.tanggal) document.getElementById('identitas-tanggal').value = data.tanggal;
+        if (data.title) document.getElementById('final-title').value = data.title;
+        if (data.p1) document.getElementById('p1-text').value = data.p1;
+        if (data.p2) document.getElementById('p2-text').value = data.p2;
+        if (data.p3) document.getElementById('p3-text').value = data.p3;
+
+        if (data.questions) {
+          Object.keys(data.questions).forEach(key => {
+            const el = document.getElementById(key);
+            if (el) el.value = data.questions[key];
+          });
+        }
+
+        if (data.sentences) {
+          Object.keys(data.sentences).forEach(key => {
+            const el = document.getElementById(`sentence-${key}`);
+            if (el) el.value = data.sentences[key];
+          });
+        }
+      } catch (e) {
+        console.warn('Could not parse localStorage', e);
+      }
+    }
+
+    // Setup Realtime Listeners dengan Event Delegation Efisien
+    function setupInputListeners() {
+      // Event delegation pada container utama agar responsif tanpa overhead
+      document.body.addEventListener('input', (e) => {
+        const target = e.target;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          triggerSave();
+
+          // Jika yang diketik adalah paragraf di Langkah 3, update hitungan kalimat
+          if (target.id === 'p1-text') updateParagraphSentenceCount(1);
+          else if (target.id === 'p2-text') updateParagraphSentenceCount(2);
+          else if (target.id === 'p3-text') updateParagraphSentenceCount(3);
+        }
+      });
+
+      // Penyesuaian Otomatis Layar & Tampilan Pertanyaan saat Mengetik di HP
+      const stripEl = document.getElementById('active-question-strip');
+      const stripBadge = document.getElementById('strip-badge');
+      const stripText = document.getElementById('strip-text');
+
+      document.body.addEventListener('focusin', (e) => {
+        const target = e.target;
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          // 1. Bersihkan highlight aktif sebelumnya
+          document.querySelectorAll('.question-block.active-focus').forEach(el => {
+            el.classList.remove('active-focus');
+          });
+
+          // 2. Cari container pembungkus pertanyaan (.question-block)
+          const parentCard = target.closest('.question-block');
+          if (parentCard) {
+            parentCard.classList.add('active-focus');
+
+            // 3. Tampilkan Teks Pertanyaan di Bilah Atas Mengambang (Floating Strip)
+            // Ini MENJAMIN 100% siswa tetap bisa membaca pertanyaan walaupun layar HP terdorong keyboard
+            const labelEl = parentCard.querySelector('label') || parentCard.querySelector('h3');
+            if (labelEl && stripEl && stripText) {
+              const cleanText = labelEl.innerText.replace(/\s+/g, ' ').replace(/\*/g, '').trim();
+              stripText.textContent = cleanText;
+              
+              if (stripBadge) {
+                if (target.id && target.id.startsWith('q')) {
+                  stripBadge.textContent = target.id.toUpperCase();
+                } else if (target.id && target.id.startsWith('sentence-')) {
+                  stripBadge.textContent = 'Rakit Kalimat';
+                } else if (target.id && target.id.startsWith('p')) {
+                  stripBadge.textContent = 'Paragraf';
+                } else {
+                  stripBadge.textContent = 'Pertanyaan';
+                }
+              }
+              stripEl.classList.remove('hidden');
+            }
+
+            // 4. Hitung posisi koordinat pasti relatif terhadap window (dengan memperhitungkan navbar)
+            const doScroll = () => {
+              const navHeight = 90; // Tinggi sticky bar + floating strip
+              const rect = parentCard.getBoundingClientRect();
+              const scrollY = window.scrollY !== undefined ? window.scrollY : (window.pageYOffset || document.documentElement.scrollTop || 0);
+              const absoluteTop = rect.top + scrollY - navHeight;
+              
+              window.scrollTo({
+                top: Math.max(0, absoluteTop),
+                behavior: 'smooth'
+              });
+            };
+
+            // Jalankan dua kali: langsung & setelah keyboard virtual Android/iOS selesai transisi (300ms)
+            doScroll();
+            setTimeout(doScroll, 120);
+            setTimeout(doScroll, 320);
+          }
+        }
+      });
+
+      // Sembunyikan floating question strip saat tidak ada kotak yang fokus
+      document.body.addEventListener('focusout', (e) => {
+        setTimeout(() => {
+          const active = document.activeElement;
+          if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA')) {
+            if (stripEl) stripEl.classList.add('hidden');
+            document.querySelectorAll('.question-block.active-focus').forEach(el => {
+              el.classList.remove('active-focus');
+            });
+          }
+        }, 150);
+      });
+    }
+
+    // Tampilkan Modal Reset
+    function openResetModal() {
+      const modal = document.getElementById('reset-confirm-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+      }
+    }
+
+    // Tutup Modal Reset
+    function closeResetModal() {
+      const modal = document.getElementById('reset-confirm-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
+    }
+
+    // Trigger dari tombol-tombol reset
+    function resetAndReloadData() {
+      openResetModal();
+    }
+
+    // Eksekusi Reset setelah dikonfirmasi pengguna
+    function executeConfirmedReset() {
+      closeResetModal();
+
+      // 1. Matikan autosave timer seketika
+      if (saveDebounceTimer) {
+        clearTimeout(saveDebounceTimer);
+        saveDebounceTimer = null;
+      }
+
+      // 2. Bersihkan total dari LocalStorage & SessionStorage
+      try {
+        localStorage.removeItem('scaffolding_lho_data');
+        localStorage.clear();
+        sessionStorage.clear();
+      } catch (err) {
+        console.warn('Gagal membersihkan storage:', err);
+      }
+
+      // 3. Kosongkan semua teks di formulir secara instan
+      const allInputs = document.querySelectorAll('input, textarea');
+      allInputs.forEach(el => {
+        if (el.id === 'identitas-tanggal') {
+          const today = new Date();
+          const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+          el.value = today.toLocaleDateString('id-ID', options) + ' (Jam Istirahat Sekolah)';
+        } else {
+          el.value = '';
+        }
+        if (el.dataset) delete el.dataset.synced;
+      });
+
+      // 4. Bersihkan preview kalimat asal di Step 2
+      if (Array.isArray(questionMetadata)) {
+        questionMetadata.forEach(q => {
+          const previewEl = document.getElementById(`source-preview-${q.id}`);
+          if (previewEl) {
+            previewEl.textContent = '(Belum diisi di Langkah 1)';
+            previewEl.className = 'italic text-slate-400 flex-1 text-[11px] sm:text-xs';
+          }
+        });
+      }
+
+      // 5. Kosongkan preview pada dokumen lembar kerja Step 4
+      const docNama = document.getElementById('doc-nama');
+      if (docNama) docNama.textContent = '-';
+      const docKelas = document.getElementById('doc-kelas');
+      if (docKelas) docKelas.textContent = '-';
+      const docJurusan = document.getElementById('doc-jurusan');
+      if (docJurusan) docJurusan.textContent = '-';
+      const docPresensi = document.getElementById('doc-presensi');
+      if (docPresensi) docPresensi.textContent = '-';
+      const docSekolah = document.getElementById('doc-sekolah');
+      if (docSekolah) docSekolah.textContent = '-';
+      const docTanggal = document.getElementById('doc-tanggal');
+      if (docTanggal) docTanggal.textContent = '-';
+      const docTitle = document.getElementById('doc-title');
+      if (docTitle) docTitle.textContent = 'LAPORAN HASIL OBSERVASI';
+      const docP1 = document.getElementById('doc-p1');
+      if (docP1) docP1.textContent = '(Paragraf 1 belum diisi...)';
+      const docP2 = document.getElementById('doc-p2');
+      if (docP2) docP2.textContent = '(Paragraf 2 belum diisi...)';
+      const docP3 = document.getElementById('doc-p3');
+      if (docP3) docP3.textContent = '(Paragraf 3 belum diisi...)';
+      const signName = document.getElementById('sign-student-name');
+      if (signName) signName.textContent = '(Nama Siswa)';
+
+      // 6. Hitung ulang indikator dan hitungan kalimat menjadi 0
+      recalculateAllSentenceCounts();
+
+      // 7. Kembali ke Langkah 1 dan scroll ke atas
+      goToStep(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // 8. Tampilkan notifikasi toast sukses
+      showToast('🗑️ Semua jawaban berhasil dikosongkan! Silakan mulai observasi objek baru.');
+    }
+
+    // Toast Helper
+    let toastTimeout = null;
+    function showToast(msg) {
+      const toast = document.getElementById('toast-notif');
+      const msgEl = document.getElementById('toast-msg');
+      if (!toast || !msgEl) return;
+
+      msgEl.textContent = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0', 'pointer-events-none');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>
